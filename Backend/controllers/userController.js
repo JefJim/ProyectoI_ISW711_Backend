@@ -1,11 +1,8 @@
 const RestrictedUser = require('../models/RestrictedUser');
 
-// Crear un usuario restringido
+// Create a restricted user
 exports.createRestrictedUser = async (req, res) => {
     const { fullName, pin, avatar, parentUser } = req.body;
-
-    console.log('Datos recibidos:', { fullName, pin, avatar, parentUser });  // Log de los datos recibidos
-
     try {
         const restrictedUser = new RestrictedUser({ fullName, pin, avatar, parentUser });
         await restrictedUser.save();
@@ -18,7 +15,7 @@ exports.createRestrictedUser = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-// Obtener todos los usuarios restringidos
+// Get all restricted users
 exports.getRestrictedUsers = async (req, res) => {
 
     const { id } = req.params;
@@ -33,22 +30,22 @@ exports.getRestrictedUserById = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // Buscar un solo usuario por su _id
+        // Search for the restricted user by ID
         const restrictedUser = await RestrictedUser.findOne({ _id: id });
 
-        // Si no se encuentra el usuario, devolver un error 404
+        // If no restricted user is found, return an error
         if (!restrictedUser) {
-            console.log(error);  // Log de error
+            console.log(error);  // Log error
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
 
-        // Devolver el usuario encontrado
+        // Return the restricted user
         res.json(restrictedUser);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
-// Actualizar un usuario restringido
+// Update a restricted user
 exports.updateRestrictedUser = async (req, res) => {
     const { id } = req.params;
     const { fullName, pin, avatar } = req.body;
@@ -66,12 +63,12 @@ exports.updateRestrictedUser = async (req, res) => {
 
         res.json({ message: 'Usuario restringido actualizado exitosamente', restrictedUser });
     } catch (error) {
-        console.error('Error al actualizar el usuario restringido:', error);  // Log del error
+        console.error('Error al actualizar el usuario restringido:', error);  // Log error
         res.status(500).json({ error: error.message });
     }
 };
 
-// Eliminar un usuario restringido
+// delete a restricted user
 exports.deleteRestrictedUser = async (req, res) => {
     const { id } = req.params;
 
