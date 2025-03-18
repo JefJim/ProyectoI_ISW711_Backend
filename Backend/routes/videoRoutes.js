@@ -8,6 +8,7 @@ router.use(authMiddleware.authenticate);
 
 router.post('/', videoController.createVideo);
 router.get('/playlist/:playlistId', videoController.getVideosByPlaylist);
+router.get('/:id', videoController.getVideoById);
 router.put('/:id', videoController.updateVideo);
 router.delete('/:id', videoController.deleteVideo);
 
