@@ -1,5 +1,6 @@
 const RestrictedUser = require('../models/RestrictedUser');
 
+
 // Create a restricted user
 exports.createRestrictedUser = async (req, res) => {
     const { fullName, pin, avatar, parentUser } = req.body;
