@@ -1,3 +1,7 @@
+const dotenv = require('dotenv');
+dotenv.config(); // Esto carga el archivo .env
+const mongoose = require('mongoose');
+
 const express = require('express');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
@@ -5,7 +9,9 @@ const userRoutes = require('./routes/userRoutes');
 const playlistRoutes = require('./routes/playlistRoutes');
 const videoRoutes = require('./routes/videoRoutes');
 const cors = require('cors');
-require('dotenv').config();
+
+
+console.log(process.env.MONGO_URI); // Verifica si MONGO_URI está correctamente cargado
 
 const app = express();
 
@@ -17,6 +23,10 @@ app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
+
+
+
+
 // Conexión a MongoDB
 connectDB();
 
