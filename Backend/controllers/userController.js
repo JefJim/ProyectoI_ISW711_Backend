@@ -1,5 +1,5 @@
 const RestrictedUser = require('../models/RestrictedUser');
-
+const User = require('../models/User');
 
 // Create a restricted user
 exports.createRestrictedUser = async (req, res) => {
@@ -7,8 +7,6 @@ exports.createRestrictedUser = async (req, res) => {
     try {
         const restrictedUser = new RestrictedUser({ fullName, pin, avatar, parentUser });
         await restrictedUser.save();
-
-        console.log('Usuario restringido guardado:', restrictedUser);  // Log del usuario guardado
 
         res.status(201).json({ message: 'Usuario restringido creado exitosamente', restrictedUser });
     } catch (error) {
@@ -44,6 +42,44 @@ exports.getRestrictedUserById = async (req, res) => {
         res.json(restrictedUser);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+// Verificar el PIN del usuario restringido antes de acceder
+exports.verifyUserPin = async (req, res) => {
+    try {
+        const { id, pin } = req.body;
+        const user = await User.findById(id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'Usuario restringido no encontrado' });
+        }
+
+        if (user.pin !== pin) {
+            return res.status(401).json({ error: 'PIN incorrecto' });
+        }
+
+        res.json({ message: 'PIN correcto', userId: user._id });
+    } catch (error) {
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+// Verificar el PIN del usuario restringido antes de acceder
+exports.verifyRestrictedUserPin = async (req, res) => {
+    try {
+        const { id, pin } = req.body;
+        const restrictedUser = await RestrictedUser.findById(id);
+
+        if (!restrictedUser) {
+            return res.status(404).json({ error: 'Usuario restringido no encontrado' });
+        }
+
+        if (restrictedUser.pin !== pin) {
+            return res.status(401).json({ error: 'PIN incorrecto' });
+        }
+
+        res.json({ message: 'PIN correcto', userId: restrictedUser._id });
+    } catch (error) {
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
 // Update a restricted user
