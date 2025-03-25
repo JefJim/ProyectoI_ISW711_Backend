@@ -1,7 +1,7 @@
 const dotenv = require('dotenv');
 dotenv.config(); // Esto carga el archivo .env
 const mongoose = require('mongoose');
-
+const bodyParser = require('body-parser');  // Requerir body-parser
 const express = require('express');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
@@ -14,7 +14,8 @@ const cors = require('cors');
 console.log(process.env.MONGO_URI); // Verifica si MONGO_URI está correctamente cargado
 
 const app = express();
-
+app.use(bodyParser.json({ limit: '50mb' })); // Puedes ajustar el valor según sea necesario
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 // Middleware
 app.use(cors());
 app.use(express.json());
