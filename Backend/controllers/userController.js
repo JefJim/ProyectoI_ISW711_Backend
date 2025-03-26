@@ -14,12 +14,13 @@ exports.createRestrictedUser = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-// Get all restricted users
+// Get all restricted users from the user
 exports.getRestrictedUsers = async (req, res) => {
-
-    const { id } = req.params;
     try {
-        const restrictedUsers = await RestrictedUser.find({ id });
+        // middleware has userID
+        const parentUserId = req.user.userId; 
+        // filter by id
+        const restrictedUsers = await RestrictedUser.find({ parentUser: parentUserId });
         res.json(restrictedUsers);
     } catch (error) {
         res.status(500).json({ error: error.message });
