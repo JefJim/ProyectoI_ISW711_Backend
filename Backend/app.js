@@ -11,8 +11,6 @@ const videoRoutes = require('./routes/videoRoutes');
 const cors = require('cors');
 
 
-console.log(process.env.MONGO_URI); // Verifica si MONGO_URI está correctamente cargado
-
 const app = express();
 app.use(bodyParser.json({ limit: '50mb' })); // Puedes ajustar el valor según sea necesario
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
