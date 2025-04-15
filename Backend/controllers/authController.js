@@ -1,8 +1,13 @@
 const User = require('../models/User');
+const VerificationCode = require('../models/verficationCode');
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer= require('nodemailer');
 const crypto = require('crypto');
+
+const { sendVerificationCode } = require('../services/twilioService');
+
 // Registro de usuario
 exports.register = async (req, res) => {
     const { email, password, phone, pin, name, lastName, country, birthDate } = req.body;
@@ -90,8 +95,6 @@ exports.verifyUser = async (req, res) => {
   }
 };
 
-
-
 // Login de usuario
 exports.login = async (req, res) => {
     const { email, password } = req.body;
@@ -102,7 +105,6 @@ exports.login = async (req, res) => {
         if (!user) {
             return res.status(400).json({ error: 'Credenciales inválidas' });
         }
-        console.log(user);
         //verifica que el ususario este activo , en caso contrario no ingresa
         if (user.status !== 'activo') {
             return res.status(403).json({ error: 'Tu cuenta aún no está verificada. Revisa tu email.' });
@@ -114,12 +116,69 @@ exports.login = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ error: 'Credenciales inválidas' });
         }
+        // Generar código de 6 dígitos
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        await VerificationCode.create({ 
+            userId: user._id, 
+            code 
+        });
 
-        // Generar el token JWT
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        const Id = user._id;
-        res.json({ token, Id });
+        // Enviar SMS (usando el servicio de Twilio)
+        await sendVerificationCode(user.phone, code);
+        res.json({ 
+            requires2FA: true,
+            message: 'Código de verificación enviado a tu teléfono' 
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error en login:', error);
+        res.status(500).json({ 
+            error: 'Error en el servidor. Intenta nuevamente más tarde.' 
+        });
+    }
+};
+
+// método para verificar el código de verificación de 2FA/mensajería de texto
+exports.verifyCode = async (req, res) => {
+    const { email, code } = req.body;
+
+    try {
+        // 1. Validar usuario
+        const user = await User.findOne({ email });
+        if (!user) return res.status(400).json({ error: 'Usuario no encontrado' });
+
+        // 2. Buscar código (sin filtro de fecha)
+        const verifyCode = await VerificationCode.findOne({
+            userId: user._id,
+            code: code.trim()
+        });
+
+        // 3. Validar expiración
+        if (!verifyCode || verifyCode.expiresAt < new Date()) {
+            if (verifyCode) await VerificationCode.deleteOne({ _id: verifyCode._id });
+            return res.status(400).json({ error: 'Código expirado. Solicita uno nuevo.' });
+        }
+
+        // 5. Eliminar código usado
+        await VerificationCode.deleteOne({ _id: verifyCode._id });
+
+        // 6. Generar JWT y responder
+        const token = jwt.sign(
+            { userId: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        return res.status(200).json({ 
+            message: 'Código verificado exitosamente', 
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email
+            }
+        });
+    } catch (error) {
+        console.error('Error en verifyCode:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
