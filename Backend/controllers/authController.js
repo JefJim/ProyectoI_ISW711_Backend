@@ -89,7 +89,8 @@ exports.verifyUser = async (req, res) => {
     await user.save();
 
     // Redirige al login 
-    res.redirect('http://localhost:5500/login.html');
+    res.redirect('http://localhost:5500/verify.html?status=success');
+
   } catch (error) {
     res.status(500).send('Error al verificar la cuenta');
   }
