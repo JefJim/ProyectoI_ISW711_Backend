@@ -26,14 +26,14 @@ exports.register = async (req, res) => {
         const verificationToken = crypto.randomBytes(20).toString('hex');
 
         // Crear un nuevo usuario
-        const user = new User({ 
-            email, 
+        const user = new User({
+            email,
             password, // El modelo se encarga del hashing
-            phone, 
+            phone,
             pin, // El modelo debería hashear esto también
-            name, 
-            lastName, 
-            country, 
+            name,
+            lastName,
+            country,
             birthDate,
             status: 'pendiente',
             verificationToken
@@ -118,9 +118,9 @@ exports.login = async (req, res) => {
 
         // Verificar estado de la cuenta
         if (user.status !== 'activo') {
-            return res.status(403).json({ 
-                error: 'Cuenta no verificada', 
-                message: 'Revisa tu email para verificar tu cuenta o contacta al soporte.' 
+            return res.status(403).json({
+                error: 'Cuenta no verificada',
+                message: 'Revisa tu email para verificar tu cuenta o contacta al soporte.'
             });
         }
 
@@ -133,9 +133,9 @@ exports.login = async (req, res) => {
         // Generar código de 6 dígitos
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos de expiración
-        
-        await VerificationCode.create({ 
-            userId: user._id, 
+
+        await VerificationCode.create({
+            userId: user._id,
             code,
             expiresAt
         });
@@ -143,7 +143,7 @@ exports.login = async (req, res) => {
         // Enviar SMS (usando el servicio de Twilio)
         await sendVerificationCode(user.phone, code);
 
-        res.status(200).json({ 
+        res.status(200).json({
             success: true,
             requires2FA: true,
             message: 'Código de verificación enviado a tu teléfono',
@@ -154,9 +154,9 @@ exports.login = async (req, res) => {
         });
     } catch (error) {
         console.error('Error en login:', error);
-        res.status(500).json({ 
-            error: 'Error en el servidor', 
-            message: 'Intenta nuevamente más tarde.' 
+        res.status(500).json({
+            error: 'Error en el servidor',
+            message: 'Intenta nuevamente más tarde.'
         });
     }
 };
@@ -204,9 +204,9 @@ exports.verifyCode = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        res.status(200).json({ 
+        res.status(200).json({
             success: true,
-            message: 'Autenticación exitosa', 
+            message: 'Autenticación exitosa',
             token,
             user: {
                 id: user._id,
@@ -217,9 +217,9 @@ exports.verifyCode = async (req, res) => {
         });
     } catch (error) {
         console.error('Error en verifyCode:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Error interno del servidor',
-            message: 'No se pudo completar la verificación' 
+            message: 'No se pudo completar la verificación'
         });
     }
 };

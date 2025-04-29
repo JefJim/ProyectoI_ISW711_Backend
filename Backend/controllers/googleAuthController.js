@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
-const bcrypt = require('bcryptjs');
+const crypto = require('crypto'); 
 
 // configure Google OAuth2 client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -9,7 +9,12 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // google authentication
 exports.googleAuth = async (req, res) => {
     const { tokenId } = req.body;
-
+    
+    if (!tokenId) {
+        return res.status(400).json({ 
+            error: 'Token ID es requerido' 
+        });
+    }
     try {
         // Verify the token ID
         const ticket = await client.verifyIdToken({
@@ -78,7 +83,6 @@ exports.googleAuth = async (req, res) => {
         });
     }
 };
-
 // complete google registration
 exports.completeGoogleRegistration = async (req, res) => {
     const { tempToken, phone, pin, country, birthDate } = req.body;
@@ -105,11 +109,10 @@ exports.completeGoogleRegistration = async (req, res) => {
         }
 
         // create user
-        const hashedPin = await bcrypt.hash(pin, 10);
         const user = new User({
             ...tempUser,
             phone,
-            pin: hashedPin,
+            pin,
             country,
             birthDate,
             status: 'activo',
