@@ -4,18 +4,26 @@ const { AuthenticationError } = require('apollo-server-express');
 
 module.exports = {
   Query: {
-    videos: async (_, __, context) => {
+    playlistVideos: async (_, { playlistId, userId }, context) => {
       if (!context.user) throw new AuthenticationError('No autenticado');
-      return await Video.find({}); 
-    },
-    searchVideos: async (_, { keyword }, context) => {
-      if (!context.user) throw new AuthenticationError('No autenticado');
-      return await Video.find({ name: { $regex: keyword, $options: 'i' } });
+      
+      // Verifica que la playlist pertenezca al usuario
+      const playlist = await Playlist.findOne({
+        _id: playlistId,
+        createdBy: userId
+      }).populate('videos');
+
+      if (!playlist) {
+        throw new Error('No tienes permisos para ver estos videos');
+      }
+
+      return playlist.videos;
     }
   },
   Video: {
     playlist: async (parent) => {
-      return await Playlist.findById(parent.playlistId); 
+      if (!parent.playlist) return null; // Maneja casos nulos
+      return await Playlist.findById(parent.playlist);
     }
   }
 };
