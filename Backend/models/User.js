@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema({
     enum: ['pendiente', 'activo'],
     default: 'pendiente' //por defecto va a aparecer en pendiente cuando el user se registraa
   },
-  verificationToker:{type: String}
+  verificationToken:{type: String}
 
 });
 

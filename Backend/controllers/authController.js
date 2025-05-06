@@ -2,9 +2,10 @@ const User = require('../models/User');
 const VerificationCode = require('../models/verficationCode');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+
 const crypto = require('crypto');
 const { sendVerificationCode } = require('../services/twilioService');
+const { sendVerificationEmail } = require('../services/emailService');
 
 // Registro de usuario
 exports.register = async (req, res) => {
@@ -40,28 +41,8 @@ exports.register = async (req, res) => {
         });
 
         await user.save();
-
-        // Envío de email de verificación
-        const verificationLink = `${process.env.FRONTEND_URL}/verify?token=${verificationToken}`;
-        const transporter = nodemailer.createTransport({
-            service: 'Gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
-
-        await transporter.sendMail({
-            from: `"${process.env.APP_NAME}" <no-reply@${process.env.APP_DOMAIN}>`,
-            to: email,
-            subject: 'Verifica tu cuenta',
-            html: `
-                <h3>¡Hola ${name}!</h3>
-                <p>Gracias por registrarte. Por favor verifica tu cuenta haciendo clic en el siguiente enlace:</p>
-                <a href="${verificationLink}">${verificationLink}</a>
-            `,
-        });
-
+        await sendVerificationEmail(email, name, verificationToken);
+       
         res.status(201).json({ 
             message: 'Usuario registrado exitosamente. Verifica tu email para activar tu cuenta.',
             data: {
@@ -75,30 +56,31 @@ exports.register = async (req, res) => {
     }
 };
 
-// Verificación de usuario
 exports.verifyUser = async (req, res) => {
     try {
         const { token } = req.query;
 
         if (!token) {
-            return res.status(400).send('Token de verificación requerido');
+            return res.status(400).json({ success: false, message: 'Token de verificación requerido' });
         }
 
         const user = await User.findOne({ verificationToken: token });
         if (!user) {
-            return res.status(400).redirect(`${process.env.FRONTEND_URL}/verify?status=error&message=Token inválido o expirado`);
+            return res.status(400).json({ success: false, message: 'Token inválido o expirado' });
         }
 
         user.status = 'activo';
         user.verificationToken = undefined;
         await user.save();
 
-        res.redirect(`${process.env.FRONTEND_URL}/verify?status=success`);
+        return res.status(200).json({ success: true, message: 'Cuenta verificada correctamente' });
+
     } catch (error) {
         console.error('Error en verificación:', error);
-        res.status(500).redirect(`${process.env.FRONTEND_URL}/verify?status=error&message=Error al verificar la cuenta`);
+        return res.status(500).json({ success: false, message: 'Error al verificar la cuenta' });
     }
 };
+
 
 // Login de usuario
 exports.login = async (req, res) => {

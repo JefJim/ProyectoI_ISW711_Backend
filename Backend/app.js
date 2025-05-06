@@ -18,6 +18,10 @@ const videoRoutes = require('./routes/videoRoutes');
 
 
 const app = express();
+const path = require('path');
+
+
+
 
 // Middlewares
 app.use(cors());
@@ -30,6 +34,11 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
+
+
+app.use(express.static(path.join(__dirname, 'Frontend/verify.html')));
+
+
 
 // Conexión a MongoDB
 connectDB();
