@@ -203,18 +203,11 @@ exports.updateRestrictedUser = async (req, res) => {
     const parentUserId = req.user.userId;
 
     try {
-        const updateData = { fullName, avatar };
-        
-        // Solo actualizar el PIN si se proporciona
-        if (pin) {
-            updateData.pin = pin;
-        }
-
-        const restrictedUser = await RestrictedUser.findOneAndUpdate(
-            { _id: id, parentUser: parentUserId },
-            updateData,
-            { new: true, runValidators: true }
-        ).select('-pin -__v');
+        // Cargar el documento completo (incluye __v)
+        const restrictedUser = await RestrictedUser.findOne({ 
+            _id: id, 
+            parentUser: parentUserId 
+        });
 
         if (!restrictedUser) {
             return res.status(404).json({ 
@@ -223,12 +216,31 @@ exports.updateRestrictedUser = async (req, res) => {
             });
         }
 
+        // Actualizar los campos deseados
+        if (fullName !== undefined) restrictedUser.fullName = fullName;
+        if (avatar !== undefined) restrictedUser.avatar = avatar;
+        if (pin !== undefined) restrictedUser.pin = pin;
+
+        // Guardar el documento — Mongoose validará la versión (__v)
+        await restrictedUser.save();
+
+        // Omitir el PIN y __v en la respuesta
+        const { pin: _, __v, ...cleanData } = restrictedUser.toObject();
+
         res.status(200).json({ 
             success: true,
             message: 'Usuario restringido actualizado exitosamente', 
-            data: restrictedUser 
+            data: cleanData
         });
+
     } catch (error) {
+        if (error.name === 'VersionError') {
+            return res.status(409).json({
+                error: 'Conflicto de concurrencia',
+                message: 'El usuario fue modificado por otro proceso. Por favor recarga los datos antes de volver a editar.'
+            });
+        }
+
         console.error('Error al actualizar usuario restringido:', error);
         res.status(500).json({ 
             error: 'Error interno del servidor',
@@ -236,6 +248,7 @@ exports.updateRestrictedUser = async (req, res) => {
         });
     }
 };
+
 
 // Eliminar usuario restringido
 exports.deleteRestrictedUser = async (req, res) => {
